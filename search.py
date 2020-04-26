@@ -173,9 +173,9 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 def bidirectionalMMsearch(problem, heuristic=nullHeuristic):
     curr_state_fwd = problem.getStartState()
     curr_state_bck = problem.getGoalState()
-    visited_states = set()  # to store the states already visited
-    visited_states.add(curr_state_fwd)
-    visited_states.add(curr_state_bck)
+    #visited_states = set()  # to store the states already visited
+    #visited_states.add(curr_state_fwd)
+    #visited_states.add(curr_state_bck)
     pathF = []
     pathB = []
     gF, gB = {curr_state_fwd: 0}, {curr_state_bck: 0}
@@ -199,7 +199,7 @@ def bidirectionalMMsearch(problem, heuristic=nullHeuristic):
 
             g_dir[c] = g_dir[n] + additional_cost
             open_dir.append((c, path + [next_direction]))
-            visited_states.add(c)
+            #visited_states.add(c)
 
             if found(open_other, c):
                 U = min(U, g_dir[c] + g_other[c])
@@ -298,6 +298,7 @@ def bidirectionalMMsearch(problem, heuristic=nullHeuristic):
             #print('\n PathF = {0}'.format(pathF))
             if pathB:
                 pathF= pathF + opposite(pathB)
+            problem.isGoalState(problem.getGoalState())
             return pathF
 
         if C == pr_min_f:
