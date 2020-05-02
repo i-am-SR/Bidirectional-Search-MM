@@ -47,6 +47,7 @@ from util import nearestPoint
 from util import manhattanDistance
 import util, layout
 import sys, types, time, random, os
+import psutil
 
 ###################################################
 # YOUR INTERFACE TO THE PACMAN WORLD: A GameState #
@@ -678,6 +679,9 @@ if __name__ == '__main__':
     """
     args = readCommand( sys.argv[1:] ) # Get game components based on input
     runGames( **args )
+
+    process = psutil.Process(os.getpid())
+    print("The total memory used is: {0}B".format(process.memory_info()[0]))
 
     # import cProfile
     # cProfile.run("runGames( **args )")

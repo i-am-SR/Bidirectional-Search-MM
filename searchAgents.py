@@ -264,7 +264,10 @@ def manhattanHeuristic(position, problem, info={}):
 
 #SR
 def manhattanHeuristic_bi(position, problem, dir = 0, info={}):
-    "The Manhattan distance heuristic for a PositionSearchProblem"
+    """The Manhattan distance heuristic for a Bi-directional PositionSearchProblem
+    dir == 0 ==> Forward search
+    dir == 1 ==> Backward search
+    Depending on the direction of our search, the goal state changes"""
     xy1 = position
     xy2 = problem.goal
     if dir == 1:
@@ -276,6 +279,18 @@ def euclideanHeuristic(position, problem, info={}):
     xy1 = position
     xy2 = problem.goal
     return ( (xy1[0] - xy2[0]) ** 2 + (xy1[1] - xy2[1]) ** 2 ) ** 0.5
+
+def euclideanHeuristic_bi(position, problem, dir = 0, info={}):
+    """The Euclidean distance heuristic for a Bi-directional PositionSearchProblem
+    dir == 0 ==> Forward search
+    dir == 1 ==> Backward search
+    Depending on the direction of our search, the goal state changes"""
+    xy1 = position
+    xy2 = problem.goal
+    if dir == 1:
+        xy2 = problem.startState
+    return ( (xy1[0] - xy2[0]) ** 2 + (xy1[1] - xy2[1]) ** 2 ) ** 0.5
+
 
 #####################################################
 # This portion is incomplete.  Time to write code!  #
@@ -601,3 +616,5 @@ def mazeDistance(point1, point2, gameState):
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False, visualize=False)
     return len(search.bfs(prob))
+
+

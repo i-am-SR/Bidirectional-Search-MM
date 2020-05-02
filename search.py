@@ -150,6 +150,13 @@ def nullHeuristic(state, problem=None):
     """
     return 0
 
+def nullHeuristic_bi(position, problem, dir = 0, info={}):
+    """
+    A heuristic function estimates the cost from the current state to the nearest
+    goal in the provided bidirectional SearchProblem.  This heuristic is trivial.
+    """
+    return 0
+
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
@@ -171,77 +178,84 @@ def aStarSearch(problem, heuristic=nullHeuristic):
 
 
 def bidirectionalMMsearch(problem, heuristic=nullHeuristic):
+    """Implementation of bidirectional A* search that Meets in the Middle
+    A search starts from the start node towards the goal node and another
+    starts from teh goal node towards the start node. These searches meet in the middle
+    and the cheapest solution is found.
+    """
+    #start point of the forward search
     curr_state_fwd = problem.getStartState()
+    # start point of the backward search
     curr_state_bck = problem.getGoalState()
-    #visited_states = set()  # to store the states already visited
-    #visited_states.add(curr_state_fwd)
-    #visited_states.add(curr_state_bck)
-    pathF = []
-    pathB = []
-    gF, gB = {curr_state_fwd: 0}, {curr_state_bck: 0}
-    openF, openB = [(curr_state_fwd, pathF)], [(curr_state_bck, pathB)]
-    closedF, closedB = [], []
+    # Lists to store the actions followed for the forward and backward searches
+    path_fwd = []
+    path_bck = []
+    # dictonaries for states and their g values in the forward and backward direction
+    g_fwd = {curr_state_fwd: 0}
+    g_bck = {curr_state_bck: 0}
+    # open and closed lists in the forward and backward directions
+    open_fwd = [(curr_state_fwd, path_fwd)]
+    open_bck = [(curr_state_bck, path_bck)]
+    closed_fwd = []
+    closed_bck = []
+    # U = Cost of the cheapest solution found so far
     U = np.inf
 
-    def extend(U, open_dir, open_other, g_dir, g_other, closed_dir, dir):
-        n, path = find_key(C, open_dir, g_dir, dir)
-
-        open_dir.remove((n, path))
-        closed_dir.append((n, path))
-
+    def search_dir(U, open1, open2, g1, g2, closed, dir):
+        "Search in the direction dir"
+        n, path = min_p_g(C, open1, g1, dir)
+        open1.remove((n, path))
+        closed.append((n, path))
         successor_list = problem.getSuccessors(n)
         for (c, next_direction, additional_cost) in successor_list:
-            if found(open_dir, c) or found(closed_dir, c):
-                if g_dir[c] <= g_dir[n] + additional_cost:
+            if found(open1, c) or found(closed, c):
+                if g1[c] <= g1[n] + additional_cost:
                     continue
 
-                open_dir = delete(open_dir, c)
+                open1 = delete(open1, c)
 
-            g_dir[c] = g_dir[n] + additional_cost
-            open_dir.append((c, path + [next_direction]))
+            g1[c] = g1[n] + additional_cost
+            open1.append((c, path + [next_direction]))
             #visited_states.add(c)
+            if found(open2, c):
+                U = min(U, g1[c] + g2[c])
 
-            if found(open_other, c):
-                U = min(U, g_dir[c] + g_other[c])
+        return U, open1, closed, g1
 
-        return U, open_dir, closed_dir, g_dir
-
-    def delete(open_dir, n):
-        """Check if the state n is on the Open list open_dir"""
-        for (c, path) in open_dir:
+    def delete(open1, n):
+        """Delete state n from Open list open1"""
+        for (c, path) in open1:
             if c == n:
-                open_dir.remove((c, path))
-        return open_dir
+                open1.remove((c, path))
+        return open1
 
-    def found(open_dir, n):
-        """Check if the state n is on the Open list open_dir"""
-        for (c, path) in open_dir:
+    def found(open1, n):
+        """Check if the state n is on the Open list open1"""
+        for (c, path) in open1:
             if c == n:
                 return True
         return False
 
-    def find_min(open_dir, g, dir):
-        """Finds minimum priority, g and f values in open_dir"""
-        # pr_min_f isn't forward pr_min instead it's the f-value
-        # of node with priority pr_min.
-        pr_min, pr_min_f = np.inf, np.inf
-        for (n, path) in open_dir:
+    def choose_min_n(open1, g, dir):
+        """Function to find the minimum values of f and g
+        for the states in the open list in the current direction"""
+        prmin, prmin_F = np.inf, np.inf
+        for (n, path) in open1:
             f = g[n] + heuristic(n, problem, dir)
             pr = max(f, 2 * g[n])
-            pr_min = min(pr_min, pr)
-            pr_min_f = min(pr_min_f, f)
+            prmin = min(prmin, pr)
+            prmin_F = min(prmin_F, f)
 
-        return pr_min, pr_min_f, min(g.values())
+        return prmin, prmin_F, min(g.values())
 
-    def find_key(pr_min, open_dir, g, dir):
-        """Finds key in open_dir with value equal to pr_min
-        and minimum g value."""
+    def min_p_g(prmin, open1, g, dir):
+        """find prmin and gmin in open list"""
         m = np.inf
         node = problem.goal
         final_path = []
-        for (n, path) in open_dir:
+        for (n, path) in open1:
             pr = max(g[n] + heuristic(n, problem, dir), 2 * g[n])
-            if pr == pr_min:
+            if pr == prmin:
                 if g[n] < m:
                     m = g[n]
                     node = n
@@ -249,157 +263,72 @@ def bidirectionalMMsearch(problem, heuristic=nullHeuristic):
 
         return node, final_path
 
-    def getPath(openF, openB):
+    def getPath(open_fwd, open_bck):
         """Get the optimal forward and backward path"""
-        for (nf, pathF) in openF:
-            for (nb, pathB) in openB:
+        for (nf, path_fwd) in open_fwd:
+            for (nb, path_bck) in open_bck:
                 if(nf == nb):
-                    return pathF, pathB
+                    return path_fwd, path_bck
+        #If no nodes are found to be common
         print('No common node found #SR')
 
 
     def opposite(path):
-        """
-        Reverses the path followed from the goal node towards the start node
-        """
-        j = []
+        """Reverse the directions in the given path. This is used for the path from
+        the goal node to the start node"""
+        reversed_path = []
         for i in path:
             # Convert NORTH to SOUTH
             if i == 'North':
-                j.append('South')
+                reversed_path.append('South')
             # Convert SOUTH to NORTH
             elif i == 'South':
-                j.append('North')
+                reversed_path.append('North')
             # Convert EAST to WEST
             elif i == 'East':
-                j.append('West')
+                reversed_path.append('West')
             # Convert WEST to EAST
             else:
-                j.append('East')
-        #print('\n PathB = {0}'.format(j))
-        return j
+                reversed_path.append('East')
+        #print('\n Path_bck = {0}'.format(j))
+        return reversed_path
 
-    while openF and openB:
-        pr_min_f, f_min_f, g_min_f = find_min(openF, gF, 0)
-        pr_min_b, f_min_b, g_min_b = find_min(openB, gB, 1)
-        C = min(pr_min_f, pr_min_b)
+    #while the open lists are not empty
+    while open_fwd and open_bck:
+        prmin_F, fmin_fwd, gmin_fwd = choose_min_n(open_fwd, g_fwd, 0)
+        prmin_b, fmin_bck, gmin_bck = choose_min_n(open_bck, g_bck, 1)
+        C = min(prmin_F, prmin_b)
 
-        if U <= max(C, f_min_f, f_min_b, g_min_f + g_min_b + 1):
+        if U <= max(C, fmin_fwd, fmin_bck, gmin_fwd + gmin_bck + 1):
+            """The condition that indicates that the optimal solution has been found.
+            The cost of the cheapest edge in this problem is 1"""
             """
-            totalOpenNodes = len(openF) + len(openB) + 1
-            totalClosedNodes = len(closedF) + len(closedB)
+            totalOpenNodes = len(open_fwd) + len(open_bck) + 1
+            totalClosedNodes = len(closed_fwd) + len(closed_bck)
             print('\nTotal nodes expanded = {0}'.format(totalOpenNodes + totalClosedNodes))
             print(' (open nodes = {0} and closed nodes = {1})'.format(totalOpenNodes, totalClosedNodes))
             """
             print('\nPath length = {0}'.format(U))
-            pathF, pathB = getPath(openF, openB)
-            #print('\n PathB = {0}'.format(pathB))
-            pathB = reversed(pathB)
-            #print('\n PathF = {0}'.format(pathF))
-            if pathB:
-                pathF= pathF + opposite(pathB)
+            path_fwd, path_bck = getPath(open_fwd, open_bck)
+            #print('\n path_bck = {0}'.format(path_bck))
+            path_bck = reversed(path_bck)
+            #print('\n Path_fwd = {0}'.format(path_fwd))
+            if path_bck:
+                path_fwd= path_fwd + opposite(path_bck)
             problem.isGoalState(problem.getGoalState())
-            return pathF
+            return path_fwd
 
-        if C == pr_min_f:
-            # Extend forward
-            U, openF, closedF, gF = extend(U, openF, openB, gF, gB, closedF, 0)
+        if C == prmin_F:
+            # Search in the forward direction
+            U, open_fwd, closed_fwd, g_fwd = search_dir(U, open_fwd, open_bck, g_fwd, g_bck, closed_fwd, 0)
         else:
-            # Extend backward
-            U, openB, closedB, gB = extend(U, openB, openF, gB, gF, closedB, 1)
+            # Search in the backward direction
+            U, open_bck, closed_bck, g_bck = search_dir(U, open_bck, open_fwd, g_bck, g_fwd, closed_bck, 1)
 
+    #Incase U never reaches the optimal value
     print('\nPath length = infinity')
-    return pathF
+    return path_fwd
 
-
-
-'''
-def bidirectionalMMSearch(problem, heuristic=nullHeuristic):
-	    """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    curr_state_fwd = problem.getStartState()
-    curr_state_bck = problem.getGoalState()
-    
-    path_fwd = []
-    path_bck = []
-    curr_cost_fwd = 0
-    curr_cost_bck = 0
-
-    open_fwd = set()	#to store the states already visited while going forward
-    closed_fwd = set()	#to store the states already visited while going forward
-    open_bck = set()	#to store the states already visited while going backward
-    closed_bck = set()	#to store the states already visited while going backward
-    open_fwd.add(curr_state_fwd)
-    open_bck.add(curr_state_bck)
-
-    pQ_open_fwd = util.PriorityQueue()	#fringe for A* is a Priority queue
-    pQ_open_bck = util.PriorityQueue()	#fringe for A* is a Priority queue
-    pQ_open_fwd.push((curr_state_fwd, path_fwd, curr_cost_fwd), max(curr_cost_fwd + heuristic(curr_state_fwd, problem), 2 * curr_cost_fwd))
-    pQ_open_bck.push((curr_state_bck, path_bck, curr_cost_bck), max(curr_cost_bck + heuristic(curr_state_bck, problem), 2 * curr_cost_bck))
-    
-    pQ_f_fwd = util.PriorityQueue()	#fringe for A* is a Priority queue
-    pQ_f_bck = util.PriorityQueue()	#fringe for A* is a Priority queue
-    pQ_f_fwd.push((curr_state_fwd, path_fwd, curr_cost_fwd), curr_cost_fwd + heuristic(curr_state_fwd, problem))
-    pQ_f_bck.push((curr_state_bck, path_bck, curr_cost_bck), curr_cost_bck + heuristic(curr_state_bck, problem))
-
-	pQ_g_fwd = util.PriorityQueue()	#fringe for A* is a Priority queue
-    pQ_g_bck = util.PriorityQueue()	#fringe for A* is a Priority queue
-    pQ_g_fwd.push((curr_state_fwd, path_fwd, curr_cost_fwd), curr_cost_fwd)
-    pQ_g_bck.push((curr_state_bck, path_bck, curr_cost_bck), curr_cost_bck)
-    
-    U = float('inf')
-
-    
-    while not pQ_open_fwd.isEmpty() and not pQ_b.isEmpty():	
-    	(prmin_fwd, _, _) = pQ_open_fwd.peek()
-    	(prmin_bck, _, _) = pQ_open_bck.peek()
-    	(fmin_fwd, _, _) = pQ_f_fwd.peek()
-    	(fmin_bck, _, _) = pQ_f_bck.peek()
-    	(gmin_fwd, _, _) = pQ_g_fwd.peek()
-    	(gmin_bck, _, _) = pQ_g_bck.peek()
-
-    	C = min(prmin_fwd, prmin_bck)
-
-    	
-    	if U <= max(C, fmin_fwd, fmin_bck, gmin_fwd + gmin_bck + 1):
-    		totalOpenNodes = len(open_fwd) + len(open_bck) + 1
-    		totalClosedNodes = len(closed_fwd) + len(closed_bck)
-    		print('\nTotal nodes expanded = {0}'.format(totalOpenNodes + totalClosedNodes))
-    		print(' (open nodes = {0} and closed nodes = {1})'.format(totalOpenNodes, totalClosedNodes))
-    		print('\nPath length = {0}'.format(U))
-    		return path_fwd
-    		#change this
-
-    	if C == prmin_fwd:
-    		#Expand in the forward direction
-    		n = pQ_open_fwd.pop()
-    		
-    		open_fwd.remove(n[0])
-    		closed_fwd.add(n[0])
-    		
-    		pQ_f_fwd.delete(n)
-    		pQ_g_fwd.delete(n)
-
-    		
-    		successor_list_fwd = problem.getSuccessors(curr_state_fwd)
-    		for (successor_state, next_direction, additional_cost) in successor_list_fwd:
-    			
-    			if successor_state in open_fwd.union(closed_fwd):
-    				if 
-
-
-
-
-
-    	if curr_state not in visited_states:
-    		visited_states.add(curr_state)	#mark state as visited
-    		successor_list = problem.getSuccessors(curr_state)	#get successors
-    		for (successor_state, next_direction, additional_cost) in successor_list:	
-    			pQueue.push((successor_state, path + [next_direction], curr_cost + additional_cost), curr_cost + additional_cost + heuristic(successor_state, problem))
-    	(curr_state, path, curr_cost) = pQueue.pop()
-    return path
-    #util.raiseNotDefined()
-'''
 
 # Abbreviations
 bfs = breadthFirstSearch
