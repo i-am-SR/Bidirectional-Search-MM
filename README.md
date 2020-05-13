@@ -7,7 +7,7 @@ Pacman domain for path-finding problems (from start to a fixedgoal location)
 (http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12320/12109)  
 
 
-Sample run on bogMaze with Manhattan heuristic:
+Sample run on bigMaze with Manhattan heuristic:
 
 ![Alt Text](https://github.com/i-am-SR/Bidirectional-Search-MM/blob/master/gif/Screencast%20from%2005-13-2020%2001_40_15%20PM.gif)
 
