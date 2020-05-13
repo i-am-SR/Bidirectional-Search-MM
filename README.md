@@ -1,6 +1,11 @@
 # Bidirectional-Search-MM
 Implementation of bidirectional search that meets in the middle in the Pacman domain
 
+Implemented bi-directional search described in the following paper: “Bidirectional Search That Is Guaranteed to Meet   
+in the Middle”, Robert C. Holte, Ariel Felner, Guni Sharon, Nathan R. Sturtevant, AAAI 2016, and integrated it into the   
+Pacman domain for path-finding problems (from start to a fixedgoal location)  
+(http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12320/12109)  
+
 To run the MM search:
 
 manhattan heuristic=> python pacman.py -l mediumMaze -z .5 -p SearchAgent -a fn=mm,heuristic=manhattanHeuristic_bi
