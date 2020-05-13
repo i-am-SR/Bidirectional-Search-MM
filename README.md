@@ -6,6 +6,12 @@ in the Middle”, Robert C. Holte, Ariel Felner, Guni Sharon, Nathan R. Sturteva
 Pacman domain for path-finding problems (from start to a fixedgoal location)  
 (http://www.aaai.org/ocs/index.php/AAAI/AAAI16/paper/download/12320/12109)  
 
+
+Sample run on bogMaze with Manhattan heuristic:
+
+![Alt Text](https://github.com/i-am-SR/Bidirectional-Search-MM/blob/master/gif/Screencast%20from%2005-13-2020%2001_40_15%20PM.gif)
+
+
 To run the MM search:
 
 manhattan heuristic=> python pacman.py -l mediumMaze -z .5 -p SearchAgent -a fn=mm,heuristic=manhattanHeuristic_bi
@@ -36,7 +42,3 @@ python pacman.py -l mediumMaze -z .5 -p SearchAgent -a fn=dfs -q
 
 The name of the layout used has to be mentioned after the -l attribute. The layouts are present in the layouts folder.
 
-
-Sample run on bogMaze with Manhattan heuristic:
-
-![Alt Text](https://github.com/i-am-SR/Bidirectional-Search-MM/blob/master/gif/Screencast%20from%2005-13-2020%2001_40_15%20PM.gif)
